@@ -30,7 +30,7 @@ app.get("/api/tree", (req, res) => {
       children: []
     }
     nodes.shift();
-    let originalTree = tree;
+
     while (nodes.length > 0) {
       const node = nodes.shift();
       // if the node's parent id is the same as the tree's id, add it to the tree
@@ -40,10 +40,11 @@ app.get("/api/tree", (req, res) => {
           label: node.label,
           children: []
         });
-      } else if (node && tree.children.length > 0) {
+      } else {
         // otherwise check if the current node's parent is a child ANYWHERE in the tree
+        // our insertion logic prevents nodes from being queried if they do not belong somewhere in the current tree
         const insertIntoTree = (currentNode: any): boolean => {
-          if (currentNode.id === node.parent_id) {
+          if (node && currentNode.id === node.parent_id) {
             currentNode.children.push({
               id: node.id,
               label: node.label,
@@ -63,20 +64,10 @@ app.get("/api/tree", (req, res) => {
         };
 
         insertIntoTree(tree);
-      } else {
-        // if the node's parent id is not found in the tree, push it back to the nodes array
-        // this is to prevent infinite loop
-        if (node) {
-          nodes.push(node);
-        }
       }
     }
     trees.push(tree);
   }
-
-
-  // const nodes = db.prepare(`SELECT * FROM nodes`).all();
-  // console.log(nodes);
   console.log(trees);
   res.send(trees);
 })
@@ -89,7 +80,7 @@ app.post("/api/tree", (req: any, res: any) => {
   // check if the parent id exists in the database
   const parentId = newNode.parentId;
   if (parentId === 0 && newNode.label === "root") {
-    // if the parent id is 0, it is a root node and requires inserting a new record in the root tree
+    // if the parent id is 0 and label is 'root', it is a root node and requires inserting a new record in the root tree
     const insertRoot = db.prepare(`
       INSERT INTO roots DEFAULT VALUES;
     `);
