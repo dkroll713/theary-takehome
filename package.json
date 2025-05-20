@@ -1,13 +1,12 @@
 {
   "scripts": {
-    "compile": "npx tsc",
+    "tsc": "npx tsc",
     "init": "node startup.js",
     "start": "node server/index.js"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
     "express": "^5.1.0",
-    "sequelize": "^6.37.7",
     "typescript": "^5.8.3",
     "zod": "^3.25.7"
   },
