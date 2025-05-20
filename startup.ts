@@ -23,6 +23,7 @@ const nodeTableSql = `
    id INTEGER PRIMARY KEY,
    label TEXT NOT NULL,
    parent_id INTEGER,
+   root_id INTEGER,
    FOREIGN KEY (root_id) REFERENCES roots(id)
   );
 `
