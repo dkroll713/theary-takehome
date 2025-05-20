@@ -8,8 +8,8 @@ fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 const db = new Database(DB_PATH);
 
 const clearSqliteDb = () => {
-  db.prepare(`DELETE FROM roots`).run();
-  db.prepare(`DELETE FROM nodes`).run();
+  db.prepare(`DROP TABLE IF EXISTS nodes`).run();
+  db.prepare(`DROP TABLE IF EXISTS roots`).run();
 }
 
 const rootTableSql = `
