@@ -3,7 +3,8 @@ import path from 'path';
 
 
 const DB_PATH = path.resolve(__dirname, '../../data/database.sqlite')
-
-const db = new Database(DB_PATH);
+const isTestEnv = process.env.NODE_ENV === 'test';
+const db = new Database(isTestEnv ? ':memory:' : DB_PATH);
+db.pragma('foreign_keys = ON');
 
 export default db;
