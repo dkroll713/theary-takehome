@@ -25,9 +25,12 @@ paths:
                   $ref: '#/components/schemas/TreeNode'
 
     post:
-      summary: Create a new tree node
+      summary: Create a new tree node or root node
       tags:
         - Tree
+      description: |
+        - To create a **regular node**, provide a valid `parentId` that already exists.
+        - To create a **new root**, set `parentId` to `0` and ensure the `label` contains the word `"root"`.
       requestBody:
         description: Tree node to create
         required: true
@@ -35,6 +38,17 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateTreeNode'
+            examples:
+              regularNode:
+                summary: Regular node
+                value:
+                  label: "Child Node A"
+                  parentId: 3
+              rootNode:
+                summary: Root node
+                value:
+                  label: "Root Node"
+                  parentId: 0
       responses:
         '201':
           description: Node created successfully

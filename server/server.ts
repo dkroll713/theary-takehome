@@ -4,5 +4,5 @@ import app from './index.js';
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Open http://localhost:${PORT}/api/tree to see the tree data`);
+  console.log(`Swagger UI is available at http://localhost:${PORT}/api-docs`);
 });
