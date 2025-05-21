@@ -1,7 +1,7 @@
 {
   "scripts": {
     "tsc": "npx tsc && tsc-alias",
-    "init": "node startup.js",
+    "init": "node dist/startup.js",
     "start": "node dist/server/server.js",
     "test": "NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles"
   },
