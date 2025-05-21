@@ -114,7 +114,9 @@ app.post("/api/tree", (req: any, res: any) => {
   res.status(201).json(newNode);
 })
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Open http://localhost:${PORT}/api/tree to see the tree data`);
-})
+// app.listen(PORT, () => {
+//   console.log(`Server is running on http://localhost:${PORT}`);
+//   console.log(`Open http://localhost:${PORT}/api/tree to see the tree data`);
+// })
+
+export default app;
