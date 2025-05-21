@@ -101,4 +101,4 @@ clearSqliteDb();
 initializeSqliteDB();
 seedSqliteDb();
 
-console.log('Database and tables created.');
+console.log('Database and tables created and seeded.');
