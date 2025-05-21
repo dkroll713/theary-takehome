@@ -1,7 +1,7 @@
 import express from "express";
-import db from "./repository/sqliteRepository";
-import { Root, Node } from "./interfaces/interfaces"
-import createTreeNodeSchema from "./schemas/CreateTreeNodeSchema";
+import db from "./repository/sqliteRepository.js";
+import { Root, Node } from "./interfaces/interfaces.js"
+import createTreeNodeSchema from "./schemas/CreateTreeNodeSchema.js";
 
 const app = express();
 
@@ -74,7 +74,6 @@ app.get("/api/tree", (req, res) => {
 
 app.post("/api/tree", (req: any, res: any) => {
   // validate the node with zod - needs to have a label and a parent id
-
   const newNode = createTreeNodeSchema.parse(req.body);
 
   // check if the parent id exists in the database
@@ -85,14 +84,24 @@ app.post("/api/tree", (req: any, res: any) => {
       INSERT INTO roots DEFAULT VALUES;
     `);
     insertRoot.run();
+
     const rootId = db.prepare(`
       SELECT id FROM roots ORDER BY id DESC LIMIT 1;
     `).get() as Root | undefined;
+
     const insertRootNode = db.prepare(`
       INSERT INTO nodes (label, root_id) VALUES (?, ?);
     `);
     insertRootNode.run(newNode.label, rootId?.id);
-    return res.status(201).json(newNode);
+
+    const newNodeRecord = db.prepare(`
+      SELECT * FROM nodes WHERE label = ? AND parent_id = ?;
+    `).get(newNode.label, parentId) as Node | undefined;
+    if (!newNodeRecord) {
+      return res.status(400).json({ error: "Node not created" });
+    }
+    console.log(`New root node created:`, newNodeRecord);
+    res.status(201).json(newNodeRecord);
   } else {
 
     const parentNode = db.prepare(`
@@ -111,12 +120,16 @@ app.post("/api/tree", (req: any, res: any) => {
     insertNode.run(label, parentId, rootId);
   }
 
-  res.status(201).json(newNode);
-})
+  // retrieve the newly created node from the database
+  const newNodeRecord = db.prepare(`
+    SELECT * FROM nodes WHERE label = ? AND parent_id = ?;
+  `).get(newNode.label, parentId) as Node | undefined;
+  if (!newNodeRecord) {
+    return res.status(400).json({ error: "Node not created" });
+  }
 
-// app.listen(PORT, () => {
-//   console.log(`Server is running on http://localhost:${PORT}`);
-//   console.log(`Open http://localhost:${PORT}/api/tree to see the tree data`);
-// })
+
+  res.status(201).json(newNodeRecord);
+})
 
 export default app;

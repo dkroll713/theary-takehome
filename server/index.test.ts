@@ -78,7 +78,7 @@ describe("GET /api/tree", () => {
 
     for (const tree of res.body) {
       if (tree.children.length > 0) {
-        console.log(`Tree children:`, tree.children);
+        // console.log(`Tree children:`, tree.children);
         for (const child of tree.children) {
           expect(child).toHaveProperty("id");
           expect(child).toHaveProperty("label");
@@ -120,8 +120,10 @@ describe("POST /api/tree", () => {
 
     const res = await request(testApp).post("/api/tree").send(newNode)
 
+    console.log(`It should return the created node:`, res.body);
+
     expect(res.body).toHaveProperty("label", newNode.label);
-    expect(res.body).toHaveProperty("parentId", newNode.parentId);
+    expect(res.body).toHaveProperty("parent_id", newNode.parentId);
     expect(res.body).toHaveProperty("id");
   })
 
@@ -149,9 +151,11 @@ describe("POST /api/tree", () => {
 
     const res = await request(testApp).post("/api/tree").send(newNode)
 
+    console.log(`It should create a new root node:`, res.body);
+
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty("label", newNode.label);
-    expect(res.body).toHaveProperty("parentId", newNode.parentId);
+    expect(res.body).toHaveProperty("parent_id", 0);
     expect(res.body).toHaveProperty("id");
   })
 
