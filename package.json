@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "tsc": "npx tsc",
+    "tsc": "npx tsc && tsc-alias",
     "init": "node startup.js",
     "start": "node dist/server/server.js",
     "test": "NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles"
@@ -22,7 +22,8 @@
     "@types/jest": "^29.5.14",
     "@types/supertest": "^6.0.3",
     "babel-jest": "^29.7.0",
-    "ts-jest": "^29.3.4"
+    "ts-jest": "^29.3.4",
+    "tsc-alias": "^1.8.16"
   },
   "type": "module"
 }
