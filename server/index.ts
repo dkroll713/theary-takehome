@@ -20,7 +20,7 @@ app.get("/api/tree", (req, res) => {
     const nodes = db.prepare(`
       SELECT * FROM nodes WHERE root_id = ?;
     `).all(root.id) as Node[];
-
+    console.log(`Nodes for root ${root.id}:`, nodes);
     // construct tree using parent_id to determine the hierarchy
     const rootNode = nodes.find((node: Node) => node.parent_id === null);
 
@@ -68,7 +68,6 @@ app.get("/api/tree", (req, res) => {
     }
     trees.push(tree);
   }
-  // console.log(trees);
   res.send(trees);
 })
 
@@ -78,7 +77,7 @@ app.post("/api/tree", (req: any, res: any) => {
 
   // check if the parent id exists in the database
   const parentId = newNode.parentId;
-  if (parentId === 0 && newNode.label === "root") {
+  if (parentId === 0 && newNode.label.includes("root")) {
     // if the parent id is 0 and label is 'root', it is a root node and requires inserting a new record in the root tree
     const insertRoot = db.prepare(`
       INSERT INTO roots DEFAULT VALUES;
@@ -93,15 +92,6 @@ app.post("/api/tree", (req: any, res: any) => {
       INSERT INTO nodes (label, root_id) VALUES (?, ?);
     `);
     insertRootNode.run(newNode.label, rootId?.id);
-
-    const newNodeRecord = db.prepare(`
-      SELECT * FROM nodes WHERE label = ? AND parent_id = ?;
-    `).get(newNode.label, parentId) as Node | undefined;
-    if (!newNodeRecord) {
-      return res.status(400).json({ error: "Node not created" });
-    }
-    console.log(`New root node created:`, newNodeRecord);
-    res.status(201).json(newNodeRecord);
   } else {
 
     const parentNode = db.prepare(`
@@ -121,9 +111,13 @@ app.post("/api/tree", (req: any, res: any) => {
   }
 
   // retrieve the newly created node from the database
-  const newNodeRecord = db.prepare(`
-    SELECT * FROM nodes WHERE label = ? AND parent_id = ?;
-  `).get(newNode.label, parentId) as Node | undefined;
+  let newNodeRecord;
+  if (parentId === 0 && newNode.label.includes("root")) {
+    newNodeRecord = db.prepare(`Select * from nodes where label = ? and parent_id is null`).get(newNode.label) as Node | undefined;
+  } else {
+    newNodeRecord = db.prepare(`Select * from nodes where label = ? and parent_id = ?`).get(newNode.label, parentId) as Node | undefined;
+  }
+  console.log(`New node record:`, newNodeRecord);
   if (!newNodeRecord) {
     return res.status(400).json({ error: "Node not created" });
   }
