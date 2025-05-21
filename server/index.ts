@@ -68,7 +68,7 @@ app.get("/api/tree", (req, res) => {
     }
     trees.push(tree);
   }
-  console.log(trees);
+  // console.log(trees);
   res.send(trees);
 })
 

@@ -1,5 +1,5 @@
 // const app = require('./index.ts');
-import app from './index';
+import app from './index.js';
 
 const PORT = 3000;
 app.listen(PORT, () => {
