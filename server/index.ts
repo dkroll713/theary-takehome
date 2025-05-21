@@ -1,7 +1,7 @@
 import express from "express";
-import db from "./repository/sqliteRepository";
-import { Root, Node } from "./interfaces/interfaces"
-import createTreeNodeSchema from "./schemas/CreateTreeNodeSchema";
+import db from "./repository/sqliteRepository.js";
+import { Root, Node } from "./interfaces/interfaces.js"
+import createTreeNodeSchema from "./schemas/CreateTreeNodeSchema.js";
 
 const app = express();
 
@@ -20,7 +20,7 @@ app.get("/api/tree", (req, res) => {
     const nodes = db.prepare(`
       SELECT * FROM nodes WHERE root_id = ?;
     `).all(root.id) as Node[];
-
+    // console.log(`Nodes for root ${root.id}:`, nodes);
     // construct tree using parent_id to determine the hierarchy
     const rootNode = nodes.find((node: Node) => node.parent_id === null);
 
@@ -68,31 +68,30 @@ app.get("/api/tree", (req, res) => {
     }
     trees.push(tree);
   }
-  console.log(trees);
   res.send(trees);
 })
 
 app.post("/api/tree", (req: any, res: any) => {
   // validate the node with zod - needs to have a label and a parent id
-
   const newNode = createTreeNodeSchema.parse(req.body);
 
   // check if the parent id exists in the database
   const parentId = newNode.parentId;
-  if (parentId === 0 && newNode.label === "root") {
+  if (parentId === 0 && newNode.label.includes("root")) {
     // if the parent id is 0 and label is 'root', it is a root node and requires inserting a new record in the root tree
     const insertRoot = db.prepare(`
       INSERT INTO roots DEFAULT VALUES;
     `);
     insertRoot.run();
+
     const rootId = db.prepare(`
       SELECT id FROM roots ORDER BY id DESC LIMIT 1;
     `).get() as Root | undefined;
+
     const insertRootNode = db.prepare(`
       INSERT INTO nodes (label, root_id) VALUES (?, ?);
     `);
     insertRootNode.run(newNode.label, rootId?.id);
-    return res.status(201).json(newNode);
   } else {
 
     const parentNode = db.prepare(`
@@ -111,10 +110,22 @@ app.post("/api/tree", (req: any, res: any) => {
     insertNode.run(label, parentId, rootId);
   }
 
-  res.status(201).json(newNode);
+  // retrieve the newly created node from the database
+  const findNodeByLabelAndParent = (label: string, parentId: number) => {
+    if (parentId === 0 && newNode.label.includes("root")) {
+      return db.prepare(`Select * from nodes where label = ? and parent_id is null`).get(newNode.label) as Node | undefined;
+    } else {
+      return db.prepare(`Select * from nodes where label = ? and parent_id = ?`).get(newNode.label, parentId) as Node | undefined;
+    }
+  }
+
+  const newNodeRecord = findNodeByLabelAndParent(newNode.label, parentId);
+  if (!newNodeRecord) {
+    return res.status(400).json({ error: "Node not created" });
+  }
+
+
+  res.status(201).json(newNodeRecord);
 })
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Open http://localhost:${PORT}/api/tree to see the tree data`);
-})
+export default app;

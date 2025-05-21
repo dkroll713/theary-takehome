@@ -1,17 +1,29 @@
 {
   "scripts": {
-    "tsc": "npx tsc",
+    "tsc": "npx tsc && tsc-alias",
     "init": "node startup.js",
-    "start": "node server/index.js"
+    "start": "node dist/server/server.js",
+    "test": "NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --detectOpenHandles"
   },
   "dependencies": {
     "better-sqlite3": "^11.10.0",
     "express": "^5.1.0",
+    "jest": "^29.7.0",
+    "supertest": "^7.1.1",
     "typescript": "^5.8.3",
     "zod": "^3.25.7"
   },
   "devDependencies": {
+    "@babel/core": "^7.27.1",
+    "@babel/preset-env": "^7.27.2",
+    "@babel/preset-typescript": "^7.27.1",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/express": "^5.0.2"
-  }
+    "@types/express": "^5.0.2",
+    "@types/jest": "^29.5.14",
+    "@types/supertest": "^6.0.3",
+    "babel-jest": "^29.7.0",
+    "ts-jest": "^29.3.4",
+    "tsc-alias": "^1.8.16"
+  },
+  "type": "module"
 }
