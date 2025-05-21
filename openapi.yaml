@@ -1,0 +1,86 @@
+openapi: 3.0.0
+info:
+  title: Tree API
+  version: 1.0.0
+  description: API for managing tree-like structures with roots and nodes.
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+
+paths:
+  /api/tree:
+    get:
+      summary: Get all tree structures
+      tags:
+        - Tree
+      responses:
+        '200':
+          description: A list of tree structures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TreeNode'
+
+    post:
+      summary: Create a new tree node
+      tags:
+        - Tree
+      requestBody:
+        description: Tree node to create
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTreeNode'
+      responses:
+        '201':
+          description: Node created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TreeNode'
+        '400':
+          description: Invalid input or parent node not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    CreateTreeNode:
+      type: object
+      required:
+        - label
+        - parentId
+      properties:
+        label:
+          type: string
+          example: "Node A"
+        parentId:
+          type: integer
+          example: 1
+
+    TreeNode:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        label:
+          type: string
+          example: "Node A"
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/TreeNode'
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Parent node not found"
