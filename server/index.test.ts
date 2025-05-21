@@ -58,14 +58,12 @@ describe("GET /api/tree", () => {
 
     expect(res.body).toBeInstanceOf(Array);
     expect(res.body.length).toBeGreaterThan(0);
-    // console.log(res.body)
   })
 
   it("each item in the array should be a tree", async () => {
     const res = await request(testApp).get("/api/tree")
 
     for (const tree of res.body) {
-      console.log(tree);
       expect(tree).toHaveProperty("id");
       expect(tree).toHaveProperty("label");
       expect(tree).toHaveProperty("children");
@@ -78,7 +76,6 @@ describe("GET /api/tree", () => {
 
     for (const tree of res.body) {
       if (tree.children.length > 0) {
-        // console.log(`Tree children:`, tree.children);
         for (const child of tree.children) {
           expect(child).toHaveProperty("id");
           expect(child).toHaveProperty("label");
@@ -120,7 +117,6 @@ describe("POST /api/tree", () => {
 
     const res = await request(testApp).post("/api/tree").send(newNode)
 
-    console.log(`It should return the created node:`, res.body);
 
     expect(res.body).toHaveProperty("label", newNode.label);
     expect(res.body).toHaveProperty("parent_id", newNode.parentId);
@@ -143,7 +139,7 @@ describe("POST /api/tree", () => {
     expect(node).toHaveProperty("id");
   })
 
-  it("should create a new root node if parentId is 0 and label is 'root'", async () => {
+  it("should create a new root node if parentId is 0 and label contains 'root'", async () => {
     const newNode = {
       label: "root",
       parentId: 0
@@ -151,11 +147,9 @@ describe("POST /api/tree", () => {
 
     const res = await request(testApp).post("/api/tree").send(newNode)
 
-    console.log(`It should create a new root node:`, res.body);
-
     expect(res.status).toBe(201);
     expect(res.body).toHaveProperty("label", newNode.label);
-    expect(res.body).toHaveProperty("parent_id", 0);
+    expect(res.body).toHaveProperty("parent_id", null);
     expect(res.body).toHaveProperty("id");
   })
 

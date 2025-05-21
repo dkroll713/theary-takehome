@@ -20,7 +20,7 @@ app.get("/api/tree", (req, res) => {
     const nodes = db.prepare(`
       SELECT * FROM nodes WHERE root_id = ?;
     `).all(root.id) as Node[];
-    console.log(`Nodes for root ${root.id}:`, nodes);
+    // console.log(`Nodes for root ${root.id}:`, nodes);
     // construct tree using parent_id to determine the hierarchy
     const rootNode = nodes.find((node: Node) => node.parent_id === null);
 
@@ -111,13 +111,15 @@ app.post("/api/tree", (req: any, res: any) => {
   }
 
   // retrieve the newly created node from the database
-  let newNodeRecord;
-  if (parentId === 0 && newNode.label.includes("root")) {
-    newNodeRecord = db.prepare(`Select * from nodes where label = ? and parent_id is null`).get(newNode.label) as Node | undefined;
-  } else {
-    newNodeRecord = db.prepare(`Select * from nodes where label = ? and parent_id = ?`).get(newNode.label, parentId) as Node | undefined;
+  const findNodeByLabelAndParent = (label: string, parentId: number) => {
+    if (parentId === 0 && newNode.label.includes("root")) {
+      return db.prepare(`Select * from nodes where label = ? and parent_id is null`).get(newNode.label) as Node | undefined;
+    } else {
+      return db.prepare(`Select * from nodes where label = ? and parent_id = ?`).get(newNode.label, parentId) as Node | undefined;
+    }
   }
-  console.log(`New node record:`, newNodeRecord);
+
+  const newNodeRecord = findNodeByLabelAndParent(newNode.label, parentId);
   if (!newNodeRecord) {
     return res.status(400).json({ error: "Node not created" });
   }
