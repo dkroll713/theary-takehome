@@ -92,3 +92,68 @@ function findNodeByLabelAndParent(label: string, parentId: number) {
     return db.prepare(`Select * from nodes where label = ? and parent_id = ?`).get(label, parentId) as Node | undefined;
   }
 }
+
+export function cloneNodeAndChildren(nodeId: number, destinationId: number) {
+  // selects node to clone
+  console.log(`Cloning node with ID: ${nodeId} to destination ID: ${destinationId}`);
+  const nodeToClone = db.prepare(`
+    SELECT * FROM nodes WHERE id = ?;
+  `).get(nodeId) as Node | undefined;
+
+  if (!nodeToClone) {
+    throw new Error("Node not found");
+  }
+
+  // selects node to add cloned node to
+  const destinationNode = db.prepare(`
+    SELECT * FROM nodes WHERE id = ?;
+  `).get(destinationId) as Node | undefined;
+
+  if (!destinationNode) {
+    throw new Error("Destination node not found");
+  }
+
+  // inserts the cloned node into the database
+  const clonedNodeId = db.prepare(`
+    INSERT INTO nodes (label, parent_id, root_id)
+    VALUES (?, ?, ?);
+  `).run(nodeToClone.label, destinationId, destinationNode.root_id).lastInsertRowid as number;
+
+  // recursively clone children of the node
+  let currentParentId = nodeId;
+
+  const children = findChildren(nodeToClone);
+  console.log(children)
+
+  while (children.length > 0) {
+    const child = children.shift();
+    console.log('Current child:', child);
+    if (child) {
+      const insertNode = insertClonedNode(child, clonedNodeId);
+    }
+  }
+
+  return findNodeByLabelAndParent(nodeToClone.label, destinationId);
+}
+
+const findChildren = (node: Node): Node[] => {
+  const children = db.prepare(`
+    SELECT * FROM nodes WHERE parent_id = ?;
+  `).all(node.id) as Node[];
+
+  return children.map(child => ({
+    ...child,
+    children: findChildren(child)
+  }));
+}
+
+const insertClonedNode = (node: Node, parentId: number) => {
+  console.log(`Inserting cloned node: ${node.label} with parent ID: ${parentId}`);
+  const clonedNodeId = db.prepare(`
+    INSERT INTO nodes (label, parent_id, root_id)
+    VALUES (?, ?, ?);
+  `).run(node.label, parentId, node.root_id).lastInsertRowid;
+
+
+  return clonedNodeId;
+}

@@ -22,3 +22,17 @@ export const createTree = (req: Request, res: Response): Promise<void> => {
     return Promise.resolve();
   }
 }
+
+export const cloneNodeAndChildren = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { nodeId, destinationId } = req.body;
+    if (!nodeId) {
+      res.status(400).json({ error: "Node ID is required" });
+      return;
+    }
+    const clonedNode = await treeService.cloneNodeAndChildren(nodeId, destinationId);
+    res.status(201).json(clonedNode);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+}
