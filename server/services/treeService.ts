@@ -1,62 +1,38 @@
 import db from "../repository/sqliteRepository.js";
-import { Node, Root } from "../interfaces/interfaces.js";
+import { Node, Root, NodeWithChildren } from "../interfaces/interfaces.js";
 
 export function getTreeStructure() {
   const trees = [];
-  const roots = db.prepare(`
-    SELECT * FROM roots;
-    `).all() as Root[];
 
-  for (const root of roots) {
-    const nodes = db.prepare(`
-        SELECT * FROM nodes WHERE root_id = ?;
-      `).all(root.id) as Node[];
-    const rootNode = nodes.find((node: Node) => node.parent_id === null);
-    const tree: { id: number | undefined; label: string | undefined; children: { id: number; label: string; children: any[] }[] } = {
-      id: rootNode?.id,
-      label: rootNode?.label,
-      children: []
-    }
+  // Get all nodes across all roots
+  const allNodes = db.prepare(`SELECT * FROM nodes;`).all() as Node[];
 
-    while (nodes.length > 0) {
-      const node = nodes.shift();
-      // if the node's parent id is the same as the tree's id, add it to the tree
-      if (node && node.parent_id === tree.id) {
-        tree.children.push({
-          id: node.id,
-          label: node.label,
-          children: []
-        });
-      } else {
-        // otherwise check if the current node's parent is a child ANYWHERE in the tree
-        // our insertion logic prevents nodes from being queried if they do not belong somewhere in the current tree
-        const insertIntoTree = (currentNode: any): boolean => {
-          if (node && currentNode.id === node.parent_id) {
-            currentNode.children.push({
-              id: node.id,
-              label: node.label,
-              children: []
-            });
-            return true; // stop once inserted
-          }
+  // Create a map of nodes by their ID
+  const nodeMap = new Map<number, any>();
+  for (const node of allNodes) {
+    nodeMap.set(node.id, { ...node, children: [] });
+  }
 
-          // Recurse through all children
-          for (const child of currentNode.children) {
-            if (insertIntoTree(child)) {
-              return true;
-            }
-          }
-
-          return false; // not found in this branch
-        };
-
-        insertIntoTree(tree);
+  // Attach children to parents
+  for (const node of allNodes) {
+    if (node.parent_id !== null) {
+      const parent = nodeMap.get(node.parent_id);
+      if (parent) {
+        parent.children.push(nodeMap.get(node.id));
       }
     }
-    trees.push(tree);
   }
+
+  // Get all root nodes (parent_id === null)
+  for (const node of allNodes) {
+    if (node.parent_id === null) {
+      trees.push(nodeMap.get(node.id));
+    }
+  }
+
   return trees;
 }
+
 
 export function insertNode(newNode: { label: string, parentId: number }) {
   const parentId = newNode.parentId;
@@ -120,23 +96,29 @@ export function cloneNodeAndChildren(nodeId: number, destinationId: number) {
   `).run(nodeToClone.label, destinationId, destinationNode.root_id).lastInsertRowid as number;
 
   // recursively clone children of the node
-  let currentParentId = nodeId;
+  let currentParentId = clonedNodeId;
 
   const children = findChildren(nodeToClone);
-  console.log(children)
+  console.log(`Children:`, children)
 
   while (children.length > 0) {
     const child = children.shift();
-    console.log('Current child:', child);
     if (child) {
-      const insertNode = insertClonedNode(child, clonedNodeId);
+      console.log(`Cloning child: ${child.label} with parent ID: ${currentParentId}`);
+      const clonedChildId = insertClonedNode(child, currentParentId);
+      console.log(`Cloned child inserted with ID: ${clonedChildId}`);
+      // if the child has children, insert them recursively
+      if (child.children && child.children.length > 0) {
+        insertChildren(child.children, clonedChildId, destinationNode.root_id);
+      }
+      if (children.length === 0) currentParentId = clonedChildId;
     }
   }
 
   return findNodeByLabelAndParent(nodeToClone.label, destinationId);
 }
 
-const findChildren = (node: Node): Node[] => {
+const findChildren = (node: Node): NodeWithChildren[] => {
   const children = db.prepare(`
     SELECT * FROM nodes WHERE parent_id = ?;
   `).all(node.id) as Node[];
@@ -152,8 +134,26 @@ const insertClonedNode = (node: Node, parentId: number) => {
   const clonedNodeId = db.prepare(`
     INSERT INTO nodes (label, parent_id, root_id)
     VALUES (?, ?, ?);
-  `).run(node.label, parentId, node.root_id).lastInsertRowid;
+  `).run(node.label, parentId, node.root_id).lastInsertRowid as number;
+
+  console.log(`Cloned node inserted with ID: ${clonedNodeId}`);
 
 
   return clonedNodeId;
+}
+
+
+const insertChildren = (children: NodeWithChildren[], parentId: number, rootId: number) => {
+  for (const child of children) {
+    // insert the child node
+    const clonedChildId = db.prepare(`
+      INSERT INTO nodes (label, parent_id, root_id)
+      VALUES (?, ?, ?);
+    `).run(child.label, parentId, rootId).lastInsertRowid as number;
+
+    // if there are any, insert children of the child node
+    if (child.children && child.children.length > 0) {
+      insertChildren(child.children, clonedChildId, rootId);
+    }
+  }
 }
